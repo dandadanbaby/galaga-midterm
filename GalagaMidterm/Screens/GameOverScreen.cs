@@ -1,15 +1,17 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using GalagaMidterm.Assets;
 using GalagaMidterm.Core;
+using GalagaMidterm.UI;
 
 namespace GalagaMidterm.Screens;
 
 /// <summary>
 /// Game over screen with large "GAME OVER" text, final score display,
-/// and blinking "PRESS ENTER TO CONTINUE" prompt.
-/// Automatically returns to the main menu after a timeout or on input.
+/// and interactive options to restart or return to menu.
+/// Automatically returns to the main menu after a timeout.
 /// </summary>
 public class GameOverScreen : IScreen
 {
@@ -20,6 +22,7 @@ public class GameOverScreen : IScreen
     private SpriteFont _fontMedium;
     private SpriteFont _fontSmall;
     private Texture2D _pixelTexture;
+    private MenuComponent _menu;
 
     private int _screenWidth;
     private int _screenHeight;
@@ -48,6 +51,10 @@ public class GameOverScreen : IScreen
 
         _pixelTexture = new Texture2D(graphicsDevice, 1, 1);
         _pixelTexture.SetData(new[] { Color.White });
+
+        _menu = new MenuComponent(new List<string> { "RESTART", "MAIN MENU" });
+        _menu.LineSpacing = 35f;
+        _menu.OnSelect += OnMenuSelect;
     }
 
     public void Update(GameTime gameTime)
@@ -55,21 +62,18 @@ public class GameOverScreen : IScreen
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         _timer += dt;
 
-        // Allow input after a short delay (prevent accidental skip)
-        if (_timer > 1.5f)
-        {
-            if (_input.MenuConfirm || _input.Pause)
-            {
-                _stateManager.SwitchTo("mainmenu", TransitionStyle.VerticalWipe, 0.6f);
-                return;
-            }
-        }
-
         // Auto-return to menu
         _autoReturnTimer -= dt;
         if (_autoReturnTimer <= 0)
         {
             _stateManager.SwitchTo("mainmenu", TransitionStyle.FadeBlack, 0.8f);
+            return;
+        }
+
+        // Allow input after a short delay (prevent accidental skip)
+        if (_timer > 1.5f)
+        {
+            _menu.Update(gameTime, _input);
         }
     }
 
@@ -127,12 +131,10 @@ public class GameOverScreen : IScreen
             y += 32;
         }
 
-        // ── "PRESS ENTER TO CONTINUE" blinking ─────────────
+        // ── Interactive Menu ───────────────────────────────
         if (_timer > 1.5f)
         {
-            float blink = MathF.Sin(_timer * 3f) > 0 ? 1f : 0.2f;
-            DrawCenteredText(spriteBatch, _fontSmall, "PRESS ENTER TO CONTINUE",
-                centerX, _screenHeight * 0.82f, Color.White * blink);
+            _menu.Draw(spriteBatch, _fontSmall, new Vector2(centerX, _screenHeight * 0.82f));
         }
 
         spriteBatch.End();
@@ -150,7 +152,21 @@ public class GameOverScreen : IScreen
     {
         _timer = 0f;
         _autoReturnTimer = 15f;
+        _menu?.Reset();
     }
 
     public void OnExit() { }
+
+    private void OnMenuSelect(int index)
+    {
+        switch (index)
+        {
+            case 0: // Restart
+                _stateManager.SwitchTo("gameplay", TransitionStyle.SquareIris, 0.6f);
+                break;
+            case 1: // Main Menu
+                _stateManager.SwitchTo("mainmenu", TransitionStyle.VerticalWipe, 0.6f);
+                break;
+        }
+    }
 }

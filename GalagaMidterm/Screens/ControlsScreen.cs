@@ -98,9 +98,9 @@ public class ControlsScreen : IScreen
         // Movement section
         DrawSectionHeader(spriteBatch, "MOVEMENT", y, alpha);
         y += lineH + 2;
-        DrawControlEntry(spriteBatch, "LEFT / RIGHT", "A / D  OR  ARROW KEYS", y, alpha);
+        DrawControlEntry(spriteBatch, "LEFT / RIGHT", "A / D  OR  ARROWS", y, alpha);
         y += lineH;
-        DrawControlEntry(spriteBatch, "", "GAMEPAD LEFT STICK", y, alpha);
+        DrawControlEntry(spriteBatch, "", "L-STICK / D-PAD", y, alpha);
         y += lineH + sectionGap;
 
         // Combat section
@@ -108,15 +108,15 @@ public class ControlsScreen : IScreen
         y += lineH + 2;
         DrawControlEntry(spriteBatch, "FIRE", "SPACE  OR  Z", y, alpha);
         y += lineH;
-        DrawControlEntry(spriteBatch, "", "GAMEPAD A BUTTON", y, alpha);
+        DrawControlEntry(spriteBatch, "", "GAMEPAD A", y, alpha);
         y += lineH + sectionGap;
 
         // System section
         DrawSectionHeader(spriteBatch, "SYSTEM", y, alpha);
         y += lineH + 2;
-        DrawControlEntry(spriteBatch, "PAUSE", "ESCAPE  OR  P", y, alpha);
+        DrawControlEntry(spriteBatch, "PAUSE", "ESC / P / START", y, alpha);
         y += lineH;
-        DrawControlEntry(spriteBatch, "MENU NAV", "UP / DOWN  +  ENTER", y, alpha);
+        DrawControlEntry(spriteBatch, "MENU NAV", "ARROWS  +  ENTER", y, alpha);
         y += lineH + sectionGap + 6;
 
         // ── Divider ────────────────────────────────────────
