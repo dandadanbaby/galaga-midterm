@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using GalagaMidterm.Assets;
-using GalagaMidterm.Audio;
 using GalagaMidterm.Core;
 using GalagaMidterm.MockState;
 using GalagaMidterm.Screens;
@@ -29,7 +28,6 @@ public class GalagaGame : Game
     private InputManager _input;
     private GameStateManager _screenManager;
     private Camera2D _camera;
-    private AudioManager _audio;
 
     // ── Mock state (the ONLY place mock is referenced) ──────
     private MockGameState _mockState;
@@ -59,7 +57,6 @@ public class GalagaGame : Game
         _input = new InputManager();
         _camera = new Camera2D();
         _screenManager = new GameStateManager();
-        _audio = new AudioManager();
 
         base.Initialize();
     }
@@ -84,10 +81,6 @@ public class GalagaGame : Game
             Debug.WriteLine("WARNING: Some assets failed to load. See manifest above.");
         }
         AssetDiagnostics.RunFullDiagnostic(_gameAssets);
-
-
-        // Initialize audio
-        _audio.Initialize(Content);
 
         // Initialize screen manager
         _screenManager.Initialize(GraphicsDevice);
