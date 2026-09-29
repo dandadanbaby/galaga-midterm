@@ -60,7 +60,7 @@ public class GameOverScreen : IScreen
         {
             if (_input.MenuConfirm || _input.Pause)
             {
-                _stateManager.SwitchTo("mainmenu");
+                _stateManager.SwitchTo("mainmenu", TransitionStyle.VerticalWipe, 0.6f);
                 return;
             }
         }
@@ -69,7 +69,7 @@ public class GameOverScreen : IScreen
         _autoReturnTimer -= dt;
         if (_autoReturnTimer <= 0)
         {
-            _stateManager.SwitchTo("mainmenu");
+            _stateManager.SwitchTo("mainmenu", TransitionStyle.FadeBlack, 0.8f);
         }
     }
 

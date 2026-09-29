@@ -345,8 +345,14 @@ public class GameplayScreen : IScreen
 
     private void HandleGameOver()
     {
-        // The GameStateManager will handle the screen transition
-        // This is just the visual reaction point
+        var gameOver = _stateManager.GetScreen("gameover") as GameOverScreen;
+        if (gameOver != null)
+        {
+            gameOver.FinalScore = _gameState.Score;
+            gameOver.HighScore = _gameState.HighScore;
+            gameOver.StageReached = _gameState.Stage;
+        }
+        _stateManager.SwitchTo("gameover", TransitionStyle.FadeBlack, 1.0f);
     }
 
     public void OnEnter()

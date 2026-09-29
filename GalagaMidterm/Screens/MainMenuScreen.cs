@@ -669,7 +669,7 @@ public class MainMenuScreen : IScreen
         switch (index)
         {
             case 0: // Start Game
-                _stateManager.SwitchTo("gameplay");
+                _stateManager.SwitchTo("gameplay", TransitionStyle.SquareIris, 0.6f);
                 break;
             case 1: // Controls
                 _stateManager.PushScreen("controls");

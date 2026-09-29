@@ -113,7 +113,7 @@ public class PauseScreen : IScreen
                 break;
             case 1: // Quit to Menu
                 _stateManager.PopScreen(); // Remove pause overlay
-                _stateManager.SwitchTo("mainmenu");
+                _stateManager.SwitchTo("mainmenu", TransitionStyle.HorizontalWipe, 0.5f);
                 break;
         }
     }
