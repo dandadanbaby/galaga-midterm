@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using GalagaMidterm.Assets;
@@ -24,6 +25,7 @@ public class GalagaGame : Game
 
     // ── Core systems ───────────────────────────────────────
     private AssetLoader _assets;
+    private GameAssets _gameAssets;
     private InputManager _input;
     private GameStateManager _screenManager;
     private Camera2D _camera;
@@ -66,9 +68,23 @@ public class GalagaGame : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // Load all game assets
+        // ── Step 1: Load raw assets via content pipeline ───
         _assets = new AssetLoader(Content);
         _assets.LoadAll();
+
+        // ── Step 2: Build typed asset façade ───────────────
+        _gameAssets = new GameAssets(_assets);
+        _gameAssets.Initialize(GraphicsDevice);
+
+        // ── Step 3: Validate all assets loaded correctly ───
+        var validation = AssetManifest.Validate(_assets, _gameAssets);
+        AssetManifest.LogResults(validation);
+        if (!validation.AllAssetsPresent)
+        {
+            Debug.WriteLine("WARNING: Some assets failed to load. See manifest above.");
+        }
+        AssetDiagnostics.RunFullDiagnostic(_gameAssets);
+
 
         // Initialize audio
         _audio.Initialize(Content);
@@ -83,7 +99,7 @@ public class GalagaGame : Game
         _mockState.Initialize(SCREEN_WIDTH, SCREEN_HEIGHT);
         // ────────────────────────────────────────────────────
 
-        // Create and register all screens
+        // Create and register all screens (pass GameAssets for typed access)
         var mainMenu = new MainMenuScreen(_input, _screenManager);
         mainMenu.LoadContent(_assets, GraphicsDevice);
 
