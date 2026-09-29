@@ -81,40 +81,48 @@ public class HUD
 
     public void Draw(SpriteBatch batch, IGameState state)
     {
-        // ── Top-left: Score ────────────────────────────────
-        string scoreLabel = "SCORE";
+        // ── Top Bar Layout ─────────────────────────────────
+        // 1UP (Left) | HIGH SCORE (Center)
+        
+        string oneUpLabel = "1UP";
         string scoreValue = _displayedScore.ToString("D6");
+        
+        string highScoreLabel = "HIGH SCORE";
+        string highScoreValue = state.HighScore.ToString("D6");
 
-        batch.DrawString(_fontSmall, scoreLabel,
-            new Vector2(PADDING, PADDING), new Color(180, 180, 180));
+        // 1. Draw "1UP" text
+        Vector2 oneUpSize = _fontSmall.MeasureString(oneUpLabel);
+        float scoreMarginX = PADDING * 3f;
+        batch.DrawString(_fontSmall, oneUpLabel, new Vector2(scoreMarginX, PADDING), Color.Red);
 
-        Vector2 scoreValuePos = new Vector2(PADDING, PADDING + 14);
-        Vector2 scoreOrigin = _scorePopScale > 1.01f
-            ? _fontSmall.MeasureString(scoreValue) * 0.5f
-            : Vector2.Zero;
-        Vector2 drawPos = _scorePopScale > 1.01f
-            ? scoreValuePos + scoreOrigin
-            : scoreValuePos;
+        // 2. Draw Score Value (with animation pop)
+        Vector2 scorePos = new Vector2(scoreMarginX, PADDING + 20);
+        Vector2 scoreOrigin = _scorePopScale > 1.01f ? _fontSmall.MeasureString(scoreValue) * 0.5f : Vector2.Zero;
+        Vector2 drawPos = _scorePopScale > 1.01f ? scorePos + scoreOrigin : scorePos;
+        batch.DrawString(_fontSmall, scoreValue, drawPos, Color.White, 0f, scoreOrigin, _scorePopScale, SpriteEffects.None, 0f);
 
-        batch.DrawString(_fontSmall, scoreValue,
-            drawPos, Color.Yellow,
-            0f, scoreOrigin, _scorePopScale, SpriteEffects.None, 0f);
+        // 3. Draw HIGH SCORE text
+        Vector2 hiLabelSize = _fontSmall.MeasureString(highScoreLabel);
+        float centerX = _screenWidth / 2f;
+        batch.DrawString(_fontSmall, highScoreLabel, new Vector2(centerX - hiLabelSize.X / 2f, PADDING), Color.Red);
 
-        // ── Top-right: Stage ───────────────────────────────
-        string stageText = $"STAGE {state.Stage:D2}";
-        Vector2 stageSize = _fontSmall.MeasureString(stageText);
-        batch.DrawString(_fontSmall, stageText,
-            new Vector2(_screenWidth - stageSize.X - PADDING, PADDING),
-            new Color(100, 220, 255));
+        // 4. Draw High Score Value
+        Vector2 hiValueSize = _fontSmall.MeasureString(highScoreValue);
+        batch.DrawString(_fontSmall, highScoreValue, new Vector2(centerX - hiValueSize.X / 2f, PADDING + 20), Color.White);
 
-        // ── Lives (below score): mini ship icons ───────────
+        // ── Bottom Bar Layout ──────────────────────────────
+        // Lives (Bottom Left) | Stage (Bottom Right)
+        
+        float bottomY = 720f - PADDING - 24f; // 720 is SCREEN_HEIGHT
+
+        // 5. Lives
         if (_playerShipTexture != null)
         {
             for (int i = 0; i < state.Lives; i++)
             {
-                float x = PADDING + i * (_playerShipTexture.Width * LIFE_ICON_SCALE + 4);
+                float x = PADDING + i * (_playerShipTexture.Width * LIFE_ICON_SCALE + 6);
                 batch.Draw(_playerShipTexture,
-                    new Vector2(x, LIVES_Y),
+                    new Vector2(x, bottomY),
                     null,
                     Color.White,
                     0f,
@@ -125,12 +133,19 @@ public class HUD
             }
         }
 
-        // ── Top-right below stage: Shield indicator ────────
+        // 6. Stage (Right aligned)
+        string stageText = $"STAGE {state.Stage}";
+        Vector2 stageSize = _fontSmall.MeasureString(stageText);
+        batch.DrawString(_fontSmall, stageText,
+            new Vector2(_screenWidth - stageSize.X - PADDING * 2f, bottomY + 4),
+            new Color(100, 220, 255));
+
+        // 7. Shield Powerup Icon (Right aligned, above stage)
         if (state.HasShield)
         {
             float iconSize = _shieldIcon.Width * ICON_SCALE;
             batch.Draw(_shieldIcon,
-                new Vector2(_screenWidth - iconSize - PADDING, LIVES_Y),
+                new Vector2(_screenWidth - iconSize - PADDING * 2f, bottomY - 24),
                 null,
                 Color.White,
                 0f,
@@ -139,13 +154,5 @@ public class HUD
                 SpriteEffects.None,
                 0f);
         }
-
-        // ── Bottom-center: High Score ──────────────────────
-        string highScoreText = $"HI {state.HighScore:D6}";
-        Vector2 hiSize = _fontSmall.MeasureString(highScoreText);
-        // Draw it semi-transparent at the top center
-        batch.DrawString(_fontSmall, highScoreText,
-            new Vector2((_screenWidth - hiSize.X) / 2f, PADDING),
-            new Color(120, 120, 120) * 0.6f);
     }
 }
