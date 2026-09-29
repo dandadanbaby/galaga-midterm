@@ -113,10 +113,15 @@ public class GalagaGame : Game
         var gameOver = new GameOverScreen(_input, _screenManager);
         gameOver.LoadContent(_assets, GraphicsDevice);
 
+        var controls = new ControlsScreen(_input, _screenManager);
+        controls.LoadContent(_assets, GraphicsDevice);
+
         _screenManager.RegisterScreen("mainmenu", mainMenu);
         _screenManager.RegisterScreen("gameplay", gameplay);
         _screenManager.RegisterScreen("pause", pause);
         _screenManager.RegisterScreen("gameover", gameOver);
+        _screenManager.RegisterScreen("controls", controls);
+
 
         // Start at main menu
         _screenManager.SwitchTo("mainmenu");
