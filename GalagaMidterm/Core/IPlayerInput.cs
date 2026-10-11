@@ -9,6 +9,8 @@ public interface IPlayerInput
 {
     bool MoveLeft { get; }
     bool MoveRight { get; }
+    bool MoveUp { get; }
+    bool MoveDown { get; }
     bool Fire { get; }
     bool Pause { get; }
 }

@@ -66,11 +66,13 @@ public class GameplayScreen : IScreen
     private float _hitFlashTimer;
     private Texture2D _pixelTexture;
 
-    // ── Stage entry text ───────────────────────────────────
+    // ── Overlay text ───────────────────────────────────────
     private SpriteFont _fontMedium;
     private SpriteFont _fontSmall;
-    private float _stageEntryTimer;
-    private bool _showStageEntry;
+
+    // ── Drop rendering ─────────────────────────────────────
+    private Texture2D _coinTexture;
+    private Texture2D _shieldIconTexture;
 
     public GameplayScreen(InputManager input, GameStateManager stateManager, Camera2D camera)
     {
@@ -92,6 +94,7 @@ public class GameplayScreen : IScreen
             _gameState.OnPlayerHit -= HandlePlayerHit;
             _gameState.OnScoreChanged -= HandleScoreChanged;
             _gameState.OnGameOver -= HandleGameOver;
+            _gameState.OnStageCleared -= HandleStageCleared;
         }
 
         _gameState = gameState;
@@ -103,6 +106,7 @@ public class GameplayScreen : IScreen
             _gameState.OnPlayerHit += HandlePlayerHit;
             _gameState.OnScoreChanged += HandleScoreChanged;
             _gameState.OnGameOver += HandleGameOver;
+            _gameState.OnStageCleared += HandleStageCleared;
         }
     }
 
@@ -156,6 +160,10 @@ public class GameplayScreen : IScreen
         // ── HUD ────────────────────────────────────────────
         _hud = new HUD();
         _hud.LoadContent(assets, _screenWidth);
+
+        // ── Drop icons ───────────────────────────────────────
+        _coinTexture = assets.GetTexture(AssetPaths.IconCoin);
+        _shieldIconTexture = assets.GetTexture(AssetPaths.IconShield);
     }
 
     public void Update(GameTime gameTime)
@@ -164,10 +172,20 @@ public class GameplayScreen : IScreen
 
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        // Pause check (input handling is front-end responsibility)
-        if (_input.Pause)
+        // Drive game logic — called here so pause overlay naturally freezes gameplay
+        _gameState.Update(gameTime);
+
+        // Pause check
+        if (_input.Pause && !_gameState.IsIntro)
         {
             _stateManager.PushScreen("pause");
+            return;
+        }
+
+        // Shop check
+        if (_input.OpenShop && !_gameState.IsIntro)
+        {
+            _stateManager.PushScreen("shop");
             return;
         }
 
@@ -177,7 +195,7 @@ public class GameplayScreen : IScreen
         _camera.Update(gameTime);
         _hud.Update(gameTime, _gameState);
 
-        // Animate enemy sprites (visual timing, not gameplay)
+        // Animate enemy sprites
         _enemyAnimTimer += dt * 1000f;
         if (_enemyAnimTimer >= ENEMY_ANIM_RATE)
         {
@@ -203,14 +221,6 @@ public class GameplayScreen : IScreen
 
         // Hit flash decay
         if (_hitFlashTimer > 0) _hitFlashTimer -= dt;
-
-        // Stage entry text decay
-        if (_showStageEntry)
-        {
-            _stageEntryTimer -= dt;
-            if (_stageEntryTimer <= 0)
-                _showStageEntry = false;
-        }
     }
 
     public void Draw(SpriteBatch spriteBatch)
@@ -233,6 +243,7 @@ public class GameplayScreen : IScreen
         DrawEnemies(spriteBatch);
         DrawPlayerProjectiles(spriteBatch);
         DrawPlayer(spriteBatch);
+        DrawDrops(spriteBatch);
         _effects.Draw(spriteBatch);
 
         spriteBatch.End();
@@ -252,15 +263,33 @@ public class GameplayScreen : IScreen
         spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         _hud.Draw(spriteBatch, _gameState);
 
-        // Stage entry text
-        if (_showStageEntry)
+        // Wave announcement text & Shop prompt
+        if (!string.IsNullOrEmpty(_gameState.WaveAnnounceText))
         {
-            string stageText = $"STAGE {_gameState.Stage}";
-            Vector2 stageSize = _fontMedium.MeasureString(stageText);
-            float alpha = MathHelper.Clamp(_stageEntryTimer / 1.5f, 0f, 1f);
-            spriteBatch.DrawString(_fontMedium, stageText,
-                new Vector2((_screenWidth - stageSize.X) / 2f, _screenHeight * 0.4f),
-                Color.Yellow * alpha);
+            string waveText = _gameState.WaveAnnounceText;
+            Vector2 waveSize = _fontMedium.MeasureString(waveText);
+            Color alertColor = waveText.Contains("WARNING") || waveText.Contains("BOSS") ? Color.Red : Color.Yellow;
+            spriteBatch.DrawString(_fontMedium, waveText,
+                new Vector2((_screenWidth - waveSize.X) / 2f, _screenHeight * 0.38f),
+                alertColor);
+
+            string shopPrompt = "PRESS [B] OR [TAB] FOR UPGRADE SHOP";
+            Vector2 promptSize = _fontSmall.MeasureString(shopPrompt);
+            spriteBatch.DrawString(_fontSmall, shopPrompt,
+                new Vector2((_screenWidth - promptSize.X) / 2f, _screenHeight * 0.38f + waveSize.Y + 10f),
+                Color.Cyan);
+        }
+
+        // Boss health bar overlay
+        if (_gameState.BossHealthPercent >= 0f)
+        {
+            DrawBossHealthBar(spriteBatch);
+        }
+
+        // Intro overlay
+        if (_gameState.IsIntro)
+        {
+            DrawIntroOverlay(spriteBatch);
         }
 
         spriteBatch.End();
@@ -271,6 +300,13 @@ public class GameplayScreen : IScreen
     private void DrawPlayer(SpriteBatch batch)
     {
         if (!_gameState.IsPlayerAlive) return;
+
+        // Invulnerability blink: skip drawing every other 6-frame cycle
+        if (_gameState.InvulnerableTimer > 0f)
+        {
+            int frame = (int)(_gameState.InvulnerableTimer * 60f);
+            if ((frame / 6) % 2 == 0) return; // Blink off
+        }
 
         int shipType = Math.Clamp(_gameState.PlayerShipType, 0, _playerShipTextures.Length - 1);
         var tex = _playerShipTextures[shipType];
@@ -295,16 +331,27 @@ public class GameplayScreen : IScreen
 
             if (enemy.EnemyType < _enemySheets.Length)
             {
+                // Sprite-sheet enemy (ship types) with rotation and scaling
+                float scale = enemy.Scale > 0 ? enemy.Scale * 1.5f : 1.5f;
+                Color tint = enemy.IsBoss ? new Color(255, 120, 120) : Color.White;
                 _enemySheets[enemy.EnemyType].DrawFrame(
-                    batch, _enemyAnimFrame, enemy.Position, 1.5f);
+                    batch, _enemyAnimFrame, enemy.Position, scale, tint, enemy.Rotation);
             }
             else
             {
+                // Asteroid enemy — uses Scale and Rotation from IEnemy
                 int asteroidIdx = Math.Clamp(enemy.EnemyType - _enemySheets.Length, 0, _asteroidTextures.Length - 1);
                 var tex = _asteroidTextures[asteroidIdx];
                 var origin = new Vector2(tex.Width / 2f, tex.Height / 2f);
-                batch.Draw(tex, enemy.Position, null, Color.White,
-                    0f, origin, 0.3f, SpriteEffects.None, 0f);
+
+                float scale = enemy.Scale;
+                float rotation = enemy.Rotation;
+
+                // Boss gets a red tint
+                Color tint = enemy.IsBoss ? new Color(255, 150, 130) : Color.White;
+
+                batch.Draw(tex, enemy.Position, null, tint,
+                    rotation, origin, scale, SpriteEffects.None, 0f);
             }
         }
     }
@@ -325,6 +372,76 @@ public class GameplayScreen : IScreen
         }
     }
 
+    private void DrawDrops(SpriteBatch batch)
+    {
+        float time = (float)System.Environment.TickCount64 / 1000f;
+
+        foreach (var drop in _gameState.Drops)
+        {
+            if (!drop.IsAlive) continue;
+
+            Texture2D tex = drop.DropType == 0 ? _coinTexture : _shieldIconTexture;
+            var origin = new Vector2(tex.Width / 2f, tex.Height / 2f);
+            float scale = 0.12f;
+
+            // Small floating bob
+            float bob = MathF.Sin(time * 3f + drop.Position.X * 0.1f) * 3f;
+            var drawPos = new Vector2(drop.Position.X, drop.Position.Y + bob);
+
+            Color tint = drop.DropType == 0
+                ? new Color(255, 220, 50)
+                : new Color(100, 200, 255);
+
+            batch.Draw(tex, drawPos, null, tint,
+                0f, origin, scale, SpriteEffects.None, 0f);
+        }
+    }
+
+    private void DrawBossHealthBar(SpriteBatch batch)
+    {
+        int barWidth = 300;
+        int barHeight = 14;
+        int barX = (_screenWidth - barWidth) / 2;
+        int barY = _screenHeight - 36;
+
+        // Background
+        batch.Draw(_pixelTexture, new Rectangle(barX, barY, barWidth, barHeight),
+            new Color(60, 0, 0));
+
+        // Health fill
+        int fillWidth = (int)(barWidth * _gameState.BossHealthPercent);
+        batch.Draw(_pixelTexture, new Rectangle(barX, barY, fillWidth, barHeight),
+            new Color(220, 50, 40));
+
+        // Border (drawn as 4 thin rects)
+        Color borderColor = Color.White;
+        batch.Draw(_pixelTexture, new Rectangle(barX, barY, barWidth, 1), borderColor);
+        batch.Draw(_pixelTexture, new Rectangle(barX, barY + barHeight - 1, barWidth, 1), borderColor);
+        batch.Draw(_pixelTexture, new Rectangle(barX, barY, 1, barHeight), borderColor);
+        batch.Draw(_pixelTexture, new Rectangle(barX + barWidth - 1, barY, 1, barHeight), borderColor);
+
+        // Label
+        string bossLabel = !string.IsNullOrEmpty(_gameState.BossName) ? _gameState.BossName : "BOSS";
+        Vector2 labelSize = _fontSmall.MeasureString(bossLabel);
+        batch.DrawString(_fontSmall, bossLabel,
+            new Vector2(barX + (barWidth - labelSize.X) / 2f, barY - labelSize.Y - 4),
+            Color.White);
+    }
+
+    private void DrawIntroOverlay(SpriteBatch batch)
+    {
+        // Semi-transparent overlay
+        batch.Draw(_pixelTexture,
+            new Rectangle(0, 0, _screenWidth, _screenHeight),
+            Color.Black * 0.5f);
+
+        string readyText = "GET READY!";
+        Vector2 readySize = _fontMedium.MeasureString(readyText);
+        batch.DrawString(_fontMedium, readyText,
+            new Vector2((_screenWidth - readySize.X) / 2f, _screenHeight * 0.4f),
+            Color.White);
+    }
+
     // ── Event handlers (visual reactions to state events) ───
 
     private void HandleExplosion(Vector2 position)
@@ -343,6 +460,10 @@ public class GameplayScreen : IScreen
         _hud.OnScoreChanged(score);
     }
 
+    private void HandleStageCleared()
+    {
+    }
+
     private void HandleGameOver()
     {
         var gameOver = _stateManager.GetScreen("gameover") as GameOverScreen;
@@ -357,8 +478,7 @@ public class GameplayScreen : IScreen
 
     public void OnEnter()
     {
-        _showStageEntry = true;
-        _stageEntryTimer = 2.5f;
+        _gameState?.Restart();
     }
 
     public void OnExit() { }

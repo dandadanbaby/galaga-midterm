@@ -234,6 +234,11 @@ public class MockGameState : IGameState
         IsGameOver = true;
         OnGameOver?.Invoke();
     }
+
+    public void Restart()
+    {
+        Initialize(_screenWidth, _screenHeight);
+    }
 }
 
 /// <summary>Mock enemy — presentation data only.</summary>

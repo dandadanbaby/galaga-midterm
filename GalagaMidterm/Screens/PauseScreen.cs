@@ -43,7 +43,7 @@ public class PauseScreen : IScreen
         _pixelTexture = new Texture2D(graphicsDevice, 1, 1);
         _pixelTexture.SetData(new[] { Color.White });
 
-        _menu = new MenuComponent(new List<string> { "RESUME", "RESTART", "MAIN MENU" });
+        _menu = new MenuComponent(new List<string> { "RESUME", "UPGRADE SHOP", "RESTART", "MAIN MENU" });
         _menu.OnSelect += OnMenuSelect;
     }
 
@@ -111,11 +111,15 @@ public class PauseScreen : IScreen
             case 0: // Resume
                 _stateManager.PopScreen();
                 break;
-            case 1: // Restart (Mock)
+            case 1: // Upgrade Shop
+                _stateManager.PopScreen();
+                _stateManager.PushScreen("shop");
+                break;
+            case 2: // Restart
                 _stateManager.PopScreen(); // Remove pause overlay
                 _stateManager.SwitchTo("gameplay", TransitionStyle.SquareIris, 0.6f);
                 break;
-            case 2: // Quit to Menu
+            case 3: // Quit to Menu
                 _stateManager.PopScreen(); // Remove pause overlay
                 _stateManager.SwitchTo("mainmenu", TransitionStyle.HorizontalWipe, 0.5f);
                 break;

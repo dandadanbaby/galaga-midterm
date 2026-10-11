@@ -24,13 +24,25 @@ public class InputManager : IPlayerInput
         _currentKeyboard.IsKeyDown(Keys.Right) || _currentKeyboard.IsKeyDown(Keys.D) ||
         _currentGamePad.ThumbSticks.Left.X > 0.3f || _currentGamePad.DPad.Right == ButtonState.Pressed;
 
+    public bool MoveUp =>
+        _currentKeyboard.IsKeyDown(Keys.Up) || _currentKeyboard.IsKeyDown(Keys.W) ||
+        _currentGamePad.ThumbSticks.Left.Y > 0.3f || _currentGamePad.DPad.Up == ButtonState.Pressed;
+
+    public bool MoveDown =>
+        _currentKeyboard.IsKeyDown(Keys.Down) || _currentKeyboard.IsKeyDown(Keys.S) ||
+        _currentGamePad.ThumbSticks.Left.Y < -0.3f || _currentGamePad.DPad.Down == ButtonState.Pressed;
+
     public bool Fire =>
-        IsKeyPressed(Keys.Space) || IsKeyPressed(Keys.Z) ||
-        IsButtonPressed(Buttons.A);
+        IsKeyHeld(Keys.Space) || IsKeyHeld(Keys.Z) ||
+        IsButtonHeld(Buttons.A);
 
     public bool Pause =>
         IsKeyPressed(Keys.Escape) || IsKeyPressed(Keys.P) ||
         IsButtonPressed(Buttons.Start);
+
+    public bool OpenShop =>
+        IsKeyPressed(Keys.B) || IsKeyPressed(Keys.Tab) ||
+        IsButtonPressed(Buttons.Y);
 
     // ── Menu navigation ────────────────────────────────────
     public bool MenuUp =>
@@ -79,5 +91,10 @@ public class InputManager : IPlayerInput
     private bool IsButtonPressed(Buttons button)
     {
         return _currentGamePad.IsButtonDown(button) && _previousGamePad.IsButtonUp(button);
+    }
+
+    public bool IsButtonHeld(Buttons button)
+    {
+        return _currentGamePad.IsButtonDown(button);
     }
 }

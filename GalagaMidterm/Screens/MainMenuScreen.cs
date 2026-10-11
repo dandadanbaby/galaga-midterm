@@ -45,21 +45,10 @@ public class MainMenuScreen : IScreen
 
     // ── Title animation ────────────────────────────────────
     private const string TITLE_TEXT = "GALAGA";
-    private const string SUBTITLE_TEXT = "MIDTERM EDITION";
     private float _titleIntroTimer;              // controls letter-by-letter reveal
     private const float TITLE_LETTER_DELAY = 0.12f;
     private const float TITLE_INTRO_DURATION = 1.5f; // seconds to fully reveal
 
-    // ── Ship showcase ──────────────────────────────────────
-    private int _showcaseShipIndex;
-    private float _showcaseTimer;
-    private float _showcaseTransition;           // 0 = showing, 1 = transitioning
-    private const float SHOWCASE_DISPLAY_TIME = 3.5f;
-    private const float SHOWCASE_FADE_TIME = 0.6f;
-
-    // ── Enemy formation display ────────────────────────────
-    private float _enemyAnimTimer;
-    private int _enemyAnimFrame;
 
     // ── Decorative star particles ──────────────────────────
     private readonly List<StarParticle> _stars = new();
@@ -140,16 +129,7 @@ public class MainMenuScreen : IScreen
         // Menu
         _menu.Update(gameTime, _input);
 
-        // Ship showcase cycling
-        UpdateShowcase(dt);
 
-        // Enemy animation
-        _enemyAnimTimer += dt * 1000f;
-        if (_enemyAnimTimer >= 150f)
-        {
-            _enemyAnimTimer -= 150f;
-            _enemyAnimFrame = (_enemyAnimFrame + 1) % 5;
-        }
 
         // Stars
         UpdateStars(dt);
@@ -174,11 +154,6 @@ public class MainMenuScreen : IScreen
         spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
         DrawTitle(spriteBatch);
-        DrawSubtitle(spriteBatch);
-        DrawDividerLine(spriteBatch, _screenHeight * 0.28f);
-        DrawShipShowcase(spriteBatch);
-        DrawEnemyFormation(spriteBatch);
-        DrawDividerLine(spriteBatch, _screenHeight * 0.595f);
         DrawMenu(spriteBatch);
         DrawFooter(spriteBatch);
         DrawScanlineOverlay(spriteBatch);
@@ -257,230 +232,7 @@ public class MainMenuScreen : IScreen
         }
     }
 
-    private void DrawSubtitle(SpriteBatch batch)
-    {
-        // Fade in after title reveal
-        float subtitleDelay = TITLE_TEXT.Length * TITLE_LETTER_DELAY + 0.3f;
-        float subtitleAlpha = MathHelper.Clamp((_titleIntroTimer - subtitleDelay) / 0.5f, 0f, 1f);
-        if (subtitleAlpha <= 0) return;
 
-        Vector2 titleSize = _fontLarge.MeasureString(TITLE_TEXT);
-        float titleY = _screenHeight * 0.08f;
-
-        Vector2 subtitleSize = _fontSmall.MeasureString(SUBTITLE_TEXT);
-        Vector2 subtitlePos = new Vector2(
-            (_screenWidth - subtitleSize.X) / 2f,
-            titleY + titleSize.Y + 8
-        );
-
-        // Subtle slide up
-        subtitlePos.Y += (1f - subtitleAlpha) * 10f;
-
-        // Cyan with slight pulse
-        float pulse = 0.7f + MathF.Sin(_timer * 2f) * 0.3f;
-        Color subtitleColor = new Color(80, 200, 255) * (pulse * subtitleAlpha);
-
-        batch.DrawString(_fontSmall, SUBTITLE_TEXT,
-            subtitlePos + new Vector2(1, 1), Color.Black * (0.4f * subtitleAlpha));
-        batch.DrawString(_fontSmall, SUBTITLE_TEXT, subtitlePos, subtitleColor);
-    }
-
-    // ═══════════════════════════════════════════════════════
-    //  Ship showcase — cycles through all 3 player ships
-    // ═══════════════════════════════════════════════════════
-
-    private void UpdateShowcase(float dt)
-    {
-        _showcaseTimer += dt;
-
-        if (_showcaseTimer >= SHOWCASE_DISPLAY_TIME)
-        {
-            // Start transition
-            _showcaseTransition += dt / SHOWCASE_FADE_TIME;
-            if (_showcaseTransition >= 1f)
-            {
-                // Switch ship
-                _showcaseShipIndex = (_showcaseShipIndex + 1) % _playerShipTextures.Length;
-                _showcaseTimer = 0f;
-                _showcaseTransition = 0f;
-            }
-        }
-        else
-        {
-            _showcaseTransition = 0f;
-        }
-    }
-
-    private void DrawShipShowcase(SpriteBatch batch)
-    {
-        float showcaseDelay = TITLE_TEXT.Length * TITLE_LETTER_DELAY + 0.8f;
-        float showcaseAlpha = MathHelper.Clamp((_titleIntroTimer - showcaseDelay) / 0.5f, 0f, 1f);
-        if (showcaseAlpha <= 0) return;
-
-        float centerX = _screenWidth / 2f;
-        float shipY = _screenHeight * 0.38f;
-
-        // Draw current ship
-        int currentIdx = _showcaseShipIndex;
-        var currentTex = _playerShipTextures[currentIdx];
-        float currentAlpha = showcaseAlpha * (1f - _showcaseTransition);
-
-        // Ship bob
-        float bob = MathF.Sin(_timer * 1.8f) * 6f;
-        // Thruster glow bob
-        float thrusterBob = MathF.Sin(_timer * 8f) * 2f;
-
-        // Ship name labels
-        string[] shipNames = { "FIGHTER I", "FIGHTER II", "FIGHTER IX" };
-
-        if (currentAlpha > 0.01f)
-        {
-            DrawShip(batch, currentTex, centerX, shipY + bob, currentAlpha);
-            DrawThrusterGlow(batch, centerX, shipY + bob + thrusterBob, currentTex, currentAlpha);
-
-            // Ship name under the ship
-            string shipName = shipNames[currentIdx];
-            Vector2 nameSize = _fontSmall.MeasureString(shipName);
-            float nameY = shipY + 40f;
-            batch.DrawString(_fontSmall, shipName,
-                new Vector2(centerX - nameSize.X / 2f, nameY),
-                new Color(200, 200, 200) * (0.7f * currentAlpha));
-        }
-
-        // Draw next ship fading in during transition
-        if (_showcaseTransition > 0.01f)
-        {
-            int nextIdx = (currentIdx + 1) % _playerShipTextures.Length;
-            var nextTex = _playerShipTextures[nextIdx];
-            float nextAlpha = showcaseAlpha * _showcaseTransition;
-
-            DrawShip(batch, nextTex, centerX, shipY + bob, nextAlpha);
-            DrawThrusterGlow(batch, centerX, shipY + bob + thrusterBob, nextTex, nextAlpha);
-
-            string nextName = shipNames[nextIdx];
-            Vector2 nextNameSize = _fontSmall.MeasureString(nextName);
-            float nextNameY = shipY + 40f;
-            batch.DrawString(_fontSmall, nextName,
-                new Vector2(centerX - nextNameSize.X / 2f, nextNameY),
-                new Color(200, 200, 200) * (0.7f * nextAlpha));
-        }
-
-        // Ship indicator dots
-        DrawShipIndicatorDots(batch, centerX, shipY + 58f, showcaseAlpha);
-    }
-
-    private void DrawShip(SpriteBatch batch, Texture2D tex, float x, float y, float alpha)
-    {
-        // Normalize to ~55 px height, preserving aspect ratio
-        float scale = 55f / tex.Height;
-        Vector2 origin = new Vector2(tex.Width / 2f, tex.Height / 2f);
-
-        // Shadow
-        batch.Draw(tex, new Vector2(x + 2, y + 2), null,
-            Color.Black * (0.3f * alpha), 0f, origin, scale, SpriteEffects.None, 0f);
-
-        // Ship
-        batch.Draw(tex, new Vector2(x, y), null,
-            Color.White * alpha, 0f, origin, scale, SpriteEffects.None, 0f);
-    }
-
-    private void DrawThrusterGlow(SpriteBatch batch, float x, float y, Texture2D shipTex, float alpha)
-    {
-        // Small glowing rectangle below the ship to simulate thruster
-        float shipScale = 55f / shipTex.Height;
-        float shipHalfH = shipTex.Height * shipScale / 2f;
-
-        float glowIntensity = 0.3f + MathF.Sin(_timer * 12f) * 0.15f;
-        float glowW = 8f + MathF.Sin(_timer * 6f) * 3f;
-        float glowH = 6f + MathF.Sin(_timer * 10f) * 4f;
-
-        batch.Draw(_pixelTexture,
-            new Rectangle(
-                (int)(x - glowW / 2f),
-                (int)(y + shipHalfH - 2),
-                (int)glowW,
-                (int)glowH),
-            new Color(80, 160, 255) * (glowIntensity * alpha));
-
-        // Brighter core
-        batch.Draw(_pixelTexture,
-            new Rectangle(
-                (int)(x - glowW / 4f),
-                (int)(y + shipHalfH - 1),
-                (int)(glowW / 2f),
-                (int)(glowH * 0.6f)),
-            Color.White * (glowIntensity * 0.6f * alpha));
-    }
-
-    private void DrawShipIndicatorDots(SpriteBatch batch, float x, float y, float alpha)
-    {
-        int count = _playerShipTextures.Length;
-        float dotSpacing = 12f;
-        float startX = x - (count - 1) * dotSpacing / 2f;
-
-        for (int i = 0; i < count; i++)
-        {
-            bool isActive = (i == _showcaseShipIndex);
-            float dotSize = isActive ? 4f : 2f;
-            Color dotColor = isActive
-                ? new Color(255, 255, 80) * alpha
-                : new Color(100, 100, 120) * (0.5f * alpha);
-
-            batch.Draw(_pixelTexture,
-                new Rectangle(
-                    (int)(startX + i * dotSpacing - dotSize / 2f),
-                    (int)(y - dotSize / 2f),
-                    (int)dotSize,
-                    (int)dotSize),
-                dotColor);
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════
-    //  Enemy formation preview
-    // ═══════════════════════════════════════════════════════
-
-    private void DrawEnemyFormation(SpriteBatch batch)
-    {
-        float formationDelay = TITLE_TEXT.Length * TITLE_LETTER_DELAY + 1.2f;
-        float formationAlpha = MathHelper.Clamp((_titleIntroTimer - formationDelay) / 0.6f, 0f, 1f);
-        if (formationAlpha <= 0) return;
-
-        float centerX = _screenWidth / 2f;
-        float startY = _screenHeight * 0.49f;
-        float spacing = 28f;
-
-        // "ENEMY FORCES" label
-        string label = "- ENEMY FORCES -";
-        Vector2 labelSize = _fontSmall.MeasureString(label);
-        batch.DrawString(_fontSmall, label,
-            new Vector2(centerX - labelSize.X / 2f, startY - 16),
-            new Color(255, 80, 80) * (0.6f * formationAlpha));
-
-        // 3 rows of enemies, one type per row
-        for (int row = 0; row < 3; row++)
-        {
-            int cols = 5 - row; // 5, 4, 3 per row
-            float rowY = startY + 6 + row * spacing;
-            float rowStartX = centerX - (cols - 1) * spacing / 2f;
-            float rowScale = 1.2f + row * 0.15f;
-
-            for (int col = 0; col < cols; col++)
-            {
-                float enemyX = rowStartX + col * spacing;
-
-                // Individual enemy bob
-                float bob = MathF.Sin(_timer * 2.5f + row * 0.8f + col * 0.4f) * 3f;
-                float bobX = MathF.Cos(_timer * 1.8f + row + col * 0.6f) * 2f;
-
-                _enemySheets[row].DrawFrame(
-                    batch, _enemyAnimFrame,
-                    new Vector2(enemyX + bobX, rowY + bob),
-                    rowScale,
-                    Color.White * formationAlpha);
-            }
-        }
-    }
 
     // ═══════════════════════════════════════════════════════
     //  Menu
@@ -492,7 +244,7 @@ public class MainMenuScreen : IScreen
         float menuAlpha = MathHelper.Clamp((_titleIntroTimer - menuDelay) / 0.4f, 0f, 1f);
         if (menuAlpha <= 0) return;
 
-        Vector2 menuCenter = new Vector2(_screenWidth / 2f, _screenHeight * 0.72f);
+        Vector2 menuCenter = new Vector2(_screenWidth / 2f, _screenHeight * 0.50f);
         _menu.Draw(batch, _fontMedium, menuCenter);
     }
 
@@ -500,24 +252,6 @@ public class MainMenuScreen : IScreen
     //  Decorative elements
     // ═══════════════════════════════════════════════════════
 
-    private void DrawDividerLine(SpriteBatch batch, float y)
-    {
-        // Gradient horizontal line — fades at edges
-        int lineW = (int)(_screenWidth * 0.7f);
-        int startX = (_screenWidth - lineW) / 2;
-
-        for (int i = 0; i < lineW; i++)
-        {
-            float t = (float)i / lineW;
-            // Smooth fade at both ends
-            float edgeFade = MathF.Min(t * 5f, 1f) * MathF.Min((1f - t) * 5f, 1f);
-            float pulse = 0.6f + MathF.Sin(_timer * 1.5f + t * 3f) * 0.4f;
-
-            batch.Draw(_pixelTexture,
-                new Rectangle(startX + i, (int)y, 1, 1),
-                new Color(80, 180, 255) * (DIVIDER_ALPHA * edgeFade * pulse));
-        }
-    }
 
     private void DrawFooter(SpriteBatch batch)
     {
@@ -655,9 +389,6 @@ public class MainMenuScreen : IScreen
     {
         _timer = 0f;
         _titleIntroTimer = 0f;
-        _showcaseTimer = 0f;
-        _showcaseShipIndex = 0;
-        _showcaseTransition = 0f;
         _pressStartBlink = 0f;
         _menu?.Reset();
     }

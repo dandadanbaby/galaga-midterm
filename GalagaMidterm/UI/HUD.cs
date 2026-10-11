@@ -28,11 +28,19 @@ public class HUD
     private const float LIFE_ICON_SCALE = 0.08f;  // Scale down player ship for lives
     private const float ICON_SCALE = 0.12f;
 
+    private Texture2D[] _allShipTextures;
+
     public void LoadContent(AssetLoader assets, int screenWidth)
     {
         _screenWidth = screenWidth;
         _fontSmall = assets.GetFont(AssetPaths.FontSmall);
-        _playerShipTexture = assets.GetTexture(AssetPaths.PlayerShip1);
+        _allShipTextures = new[]
+        {
+            assets.GetTexture(AssetPaths.PlayerShip1),
+            assets.GetTexture(AssetPaths.PlayerShip2),
+            assets.GetTexture(AssetPaths.PlayerShip9)
+        };
+        _playerShipTexture = _allShipTextures[0];
         _shieldIcon = assets.GetTexture(AssetPaths.IconShield);
         _coinIcon = assets.GetTexture(AssetPaths.IconCoin);
     }
@@ -110,18 +118,33 @@ public class HUD
         Vector2 hiValueSize = _fontSmall.MeasureString(highScoreValue);
         batch.DrawString(_fontSmall, highScoreValue, new Vector2(centerX - hiValueSize.X / 2f, PADDING + 20), Color.White);
 
+        // 4b. Draw Coins (Top Right)
+        if (_coinIcon != null)
+        {
+            string coinText = $"x{state.Coins}";
+            Vector2 coinSize = _fontSmall.MeasureString(coinText);
+            float coinRightX = _screenWidth - PADDING * 2f;
+            float coinX = coinRightX - coinSize.X - 22f;
+            batch.Draw(_coinIcon, new Vector2(coinX, PADDING + 12), null, Color.Gold, 0f, Vector2.Zero, 0.12f, SpriteEffects.None, 0f);
+            batch.DrawString(_fontSmall, coinText, new Vector2(coinX + 22f, PADDING + 16), Color.Yellow);
+        }
+
         // ── Bottom Bar Layout ──────────────────────────────
         // Lives (Bottom Left) | Stage (Bottom Right)
         
         float bottomY = 720f - PADDING - 24f; // 720 is SCREEN_HEIGHT
 
-        // 5. Lives
-        if (_playerShipTexture != null)
+        // 5. Lives (matching selected ship model)
+        var shipTex = _allShipTextures != null && state.PlayerShipType >= 0 && state.PlayerShipType < _allShipTextures.Length
+            ? _allShipTextures[state.PlayerShipType]
+            : _playerShipTexture;
+
+        if (shipTex != null)
         {
             for (int i = 0; i < state.Lives; i++)
             {
-                float x = PADDING + i * (_playerShipTexture.Width * LIFE_ICON_SCALE + 6);
-                batch.Draw(_playerShipTexture,
+                float x = PADDING + i * (shipTex.Width * LIFE_ICON_SCALE + 6);
+                batch.Draw(shipTex,
                     new Vector2(x, bottomY),
                     null,
                     Color.White,

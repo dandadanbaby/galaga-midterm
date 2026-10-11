@@ -38,6 +38,33 @@ public interface IGameState
     bool IsPaused { get; }
     bool IsGameOver { get; }
 
+    // ── Extended game state (defaults for backwards compatibility) ──
+    /// <summary>Total number of stages/levels.</summary>
+    int MaxStages => 5;
+    /// <summary>Boss HP as 0–1 fraction, or -1 if no boss present.</summary>
+    float BossHealthPercent => -1f;
+    /// <summary>Name of current boss or mini-boss.</summary>
+    string BossName => "BOSS";
+    /// <summary>Player coin currency for the shop.</summary>
+    int Coins => Shop?.Coins ?? 0;
+    /// <summary>Shop and upgrade state.</summary>
+    ShopState Shop => null;
+    /// <summary>True when the player has won the game.</summary>
+    bool IsVictory => false;
+    /// <summary>True during the level intro countdown.</summary>
+    bool IsIntro => false;
+    /// <summary>Remaining invulnerability time in seconds (0 = vulnerable).</summary>
+    float InvulnerableTimer => 0f;
+    /// <summary>Collectible drops on screen (coins, shields).</summary>
+    IReadOnlyList<DropEntity> Drops => System.Array.Empty<DropEntity>();
+    /// <summary>Text to display when a new wave starts (e.g. "WAVE 2"). Empty = nothing.</summary>
+    string WaveAnnounceText => "";
+    /// <summary>Remaining shield time in seconds (0 = no shield active).</summary>
+    float ShieldTimer => 0f;
+
+    void Update(GameTime gameTime);
+    void Restart();
+
     // ── Events the front-end subscribes to ─────────────────
     /// <summary>Fired when an explosion should be rendered at a position.</summary>
     event Action<Vector2> OnExplosion;
@@ -59,6 +86,13 @@ public interface IEnemy
     Vector2 Position { get; }
     int EnemyType { get; }  // 0 = EnemyShip2, 1 = EnemyShip4, 2 = Spaceship_4, 3+ = Asteroid
     bool IsAlive { get; }
+
+    /// <summary>Rendering scale multiplier (1.0 = normal).</summary>
+    float Scale => 1.0f;
+    /// <summary>Rotation angle in radians for visual spin.</summary>
+    float Rotation => 0f;
+    /// <summary>True if this is a boss entity (rendered with tint and special UI).</summary>
+    bool IsBoss => false;
 }
 
 /// <summary>

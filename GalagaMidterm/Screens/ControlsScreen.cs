@@ -98,17 +98,17 @@ public class ControlsScreen : IScreen
         // Movement section
         DrawSectionHeader(spriteBatch, "MOVEMENT", y, alpha);
         y += lineH + 2;
-        DrawControlEntry(spriteBatch, "LEFT / RIGHT", "A / D  OR  ARROWS", y, alpha);
+        DrawControlEntry(spriteBatch, "4-WAY MOVE", "WASD / ARROWS", y, alpha);
         y += lineH;
         DrawControlEntry(spriteBatch, "", "L-STICK / D-PAD", y, alpha);
         y += lineH + sectionGap;
 
-        // Combat section
-        DrawSectionHeader(spriteBatch, "COMBAT", y, alpha);
+        // Combat & Shop section
+        DrawSectionHeader(spriteBatch, "COMBAT & HANGAR", y, alpha);
         y += lineH + 2;
-        DrawControlEntry(spriteBatch, "FIRE", "SPACE  OR  Z", y, alpha);
+        DrawControlEntry(spriteBatch, "FIRE (HOLD)", "SPACE  OR  Z", y, alpha);
         y += lineH;
-        DrawControlEntry(spriteBatch, "", "GAMEPAD A", y, alpha);
+        DrawControlEntry(spriteBatch, "UPGRADE SHOP", "B  OR  TAB", y, alpha);
         y += lineH + sectionGap;
 
         // System section
