@@ -81,6 +81,9 @@ public class GalagaGame : Game
         }
         AssetDiagnostics.RunFullDiagnostic(_gameAssets);
 
+        // ── Step 4: Load all audio ─────────────────────────
+        AudioManager.LoadAll(Content);
+
         // Initialize screen manager
         _screenManager.Initialize(GraphicsDevice);
 

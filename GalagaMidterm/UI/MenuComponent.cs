@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using GalagaMidterm.Assets;
 using GalagaMidterm.Core;
 
 namespace GalagaMidterm.UI;
@@ -91,6 +92,7 @@ public class MenuComponent
 
         if (input.MenuConfirm)
         {
+            AudioManager.Play(Sfx.MenuSelect);
             OnSelect?.Invoke(_selectedIndex);
         }
 

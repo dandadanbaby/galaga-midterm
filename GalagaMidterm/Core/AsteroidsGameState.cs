@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using GalagaMidterm.Assets;
 
 namespace GalagaMidterm.Core;
 
@@ -381,6 +382,8 @@ public class AsteroidsGameState : IGameState
                 Stage++;
                 WaveAnnounceText = Stage == 10 ? "WARNING: BOSS DETECTED!" : $"WAVE {Stage}";
                 _waveAnnounceTimer = WaveAnnounceDuration;
+                if (Stage == 10 || Stage == 5 || Stage == 9 || (Stage > 10 && Stage % 5 == 0))
+                    AudioManager.Play(Sfx.BossWarning);
                 OnStageCleared?.Invoke();
                 StartWave();
             }
@@ -513,6 +516,7 @@ public class AsteroidsGameState : IGameState
         {
             FirePlayerWeapons();
             _fireCooldown = baseCooldown;
+            AudioManager.Play(Sfx.Shoot);
         }
     }
 
@@ -723,6 +727,7 @@ public class AsteroidsGameState : IGameState
                         _shieldTimer = 0;
                         _invulnerableFrames = 60;
                         OnExplosion?.Invoke(PlayerPosition);
+                        AudioManager.Play(Sfx.ShieldBreak);
                     }
                     else
                     {
@@ -748,6 +753,7 @@ public class AsteroidsGameState : IGameState
                         _invulnerableFrames = 60;
                         if (!ship.IsBoss) ship.IsAlive = false;
                         OnExplosion?.Invoke(ship.Position);
+                        AudioManager.Play(Sfx.ShieldBreak);
                     }
                     else
                     {
@@ -776,6 +782,7 @@ public class AsteroidsGameState : IGameState
                         _invulnerableFrames = 60;
                         asteroid.IsAlive = false;
                         OnExplosion?.Invoke(asteroid.Position);
+                        AudioManager.Play(Sfx.ShieldBreak);
                     }
                     else
                     {
@@ -864,10 +871,12 @@ public class AsteroidsGameState : IGameState
                 {
                     Shop.Coins++;
                     AddScore(200);
+                    AudioManager.Play(Sfx.Coin);
                 }
                 else // Shield
                 {
                     _shieldTimer = ShieldDurationFrames;
+                    AudioManager.Play(Sfx.Shield);
                 }
             }
         }

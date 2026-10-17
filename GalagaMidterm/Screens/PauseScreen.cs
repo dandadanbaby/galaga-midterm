@@ -100,9 +100,13 @@ public class PauseScreen : IScreen
     {
         _timer = 0f;
         _menu?.Reset();
+        AudioManager.PauseMusic();
     }
 
-    public void OnExit() { }
+    public void OnExit()
+    {
+        AudioManager.ResumeMusic();
+    }
 
     private void OnMenuSelect(int index)
     {

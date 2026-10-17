@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 
@@ -63,11 +65,17 @@ public static class AudioManager
 
     public static void LoadAll(ContentManager content)
     {
+        // Load SFX directly from .wav files using SoundEffect.FromStream
+        // (avoids needing ffprobe for MGCB SoundEffectProcessor)
+        string contentDir = content.RootDirectory;
+
         foreach (var kvp in Config)
         {
             try
             {
-                _effects[kvp.Key] = content.Load<SoundEffect>(kvp.Value.Path);
+                string wavPath = Path.Combine(contentDir, kvp.Value.Path + ".wav");
+                using var stream = TitleContainer.OpenStream(wavPath);
+                _effects[kvp.Key] = SoundEffect.FromStream(stream);
             }
             catch (Exception ex)
             {
@@ -77,7 +85,9 @@ public static class AudioManager
 
         try
         {
-            var music = content.Load<SoundEffect>(MusicPath);
+            string musicWavPath = Path.Combine(contentDir, MusicPath + ".wav");
+            using var stream = TitleContainer.OpenStream(musicWavPath);
+            var music = SoundEffect.FromStream(stream);
             _music = music.CreateInstance();
             _music.IsLooped = true; // must be set before Play()
         }

@@ -447,12 +447,14 @@ public class GameplayScreen : IScreen
     private void HandleExplosion(Vector2 position)
     {
         _effects.SpawnExplosion(position, ExplosionSize.Medium, 1.5f);
+        AudioManager.Play(Sfx.Explosion);
     }
 
     private void HandlePlayerHit()
     {
         _camera.Shake(6f, 0.4f);
         _hitFlashTimer = 0.15f;
+        AudioManager.Play(Sfx.PlayerHit);
     }
 
     private void HandleScoreChanged(int score)
@@ -462,10 +464,13 @@ public class GameplayScreen : IScreen
 
     private void HandleStageCleared()
     {
+        AudioManager.Play(Sfx.WaveClear);
     }
 
     private void HandleGameOver()
     {
+        AudioManager.Play(Sfx.GameOver);
+        AudioManager.StopMusic();
         var gameOver = _stateManager.GetScreen("gameover") as GameOverScreen;
         if (gameOver != null)
         {
@@ -479,7 +484,11 @@ public class GameplayScreen : IScreen
     public void OnEnter()
     {
         _gameState?.Restart();
+        AudioManager.PlayMusic();
     }
 
-    public void OnExit() { }
+    public void OnExit()
+    {
+        AudioManager.StopMusic();
+    }
 }

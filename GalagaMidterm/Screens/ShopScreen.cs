@@ -101,6 +101,7 @@ public class ShopScreen : IScreen
         {
             if (_selectedIndex >= 0 && _selectedIndex < rows.Count)
             {
+                AudioManager.Play(Sfx.ShopBuy);
                 rows[_selectedIndex].Action?.Invoke();
             }
         }

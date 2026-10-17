@@ -163,6 +163,7 @@ public class VictoryScreen : IScreen
         _timer = 0f;
         _autoReturnTimer = 20f;
         _menu?.Reset();
+        AudioManager.Play(Sfx.Victory);
     }
 
     public void OnExit() { }

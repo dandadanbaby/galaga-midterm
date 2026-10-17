@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using GalagaMidterm.Assets;
 
 namespace GalagaMidterm.Core;
 
@@ -269,6 +270,7 @@ public class EnemyShipEntity : IEnemy
         if (Position.Y < 10f || Position.Y > _screenHeight - 40f) return;
 
         float bulletSpeed = 3.5f + Math.Min(_stage * 0.15f, 2.5f);
+        AudioManager.Play(Sfx.EnemyShoot);
 
         if (IsBoss)
         {

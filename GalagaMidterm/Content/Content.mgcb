@@ -468,3 +468,45 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:sprites/icons/Shield.png
+
+#begin audio/shoot.wav
+/copy:audio/shoot.wav
+
+#begin audio/explosion.wav
+/copy:audio/explosion.wav
+
+#begin audio/player_hit.wav
+/copy:audio/player_hit.wav
+
+#begin audio/coin.wav
+/copy:audio/coin.wav
+
+#begin audio/shield.wav
+/copy:audio/shield.wav
+
+#begin audio/menu_select.wav
+/copy:audio/menu_select.wav
+
+#begin audio/game_over.wav
+/copy:audio/game_over.wav
+
+#begin audio/victory.wav
+/copy:audio/victory.wav
+
+#begin audio/wave_clear.wav
+/copy:audio/wave_clear.wav
+
+#begin audio/boss_warning.wav
+/copy:audio/boss_warning.wav
+
+#begin audio/shop_buy.wav
+/copy:audio/shop_buy.wav
+
+#begin audio/enemy_shoot.wav
+/copy:audio/enemy_shoot.wav
+
+#begin audio/shield_break.wav
+/copy:audio/shield_break.wav
+
+#begin audio/music_loop.wav
+/copy:audio/music_loop.wav
